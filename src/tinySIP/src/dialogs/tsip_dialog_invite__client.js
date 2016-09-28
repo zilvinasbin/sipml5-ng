@@ -82,7 +82,7 @@ function c0000_Started_2_Outgoing_X_oINVITE(ao_args){
 	if(o_dialog.get_session().media.timers.i_timeout){
 		o_dialog.stimers.i_timeout = o_dialog.get_session().media.timers.i_timeout;
 		o_dialog.stimers.s_refresher = o_dialog.get_session().media.timers.s_refresher;
-		o_dialog.stimers.is_refresher = tsk_stri,g_iequals(o_dialog.stimers.s_refresher, "uac");
+		o_dialog.stimers.is_refresher = tsk_string_iequals(o_dialog.stimers.s_refresher, "uac");
 		o_dialog.supported.b_timer = true;
 	}
 
