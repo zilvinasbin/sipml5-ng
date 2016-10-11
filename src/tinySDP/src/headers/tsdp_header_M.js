@@ -364,11 +364,11 @@ tsdp_header_M.prototype.set_holdresume_att = function(b_lo_held, b_ro_held){
 	var hold_resume_atts = [["sendrecv", "recvonly"],["sendonly", "inactive"]];
 	
 	if((o_hdr_A = this.find_a("sendrecv")) || (o_hdr_A = this.find_a("sendonly")) || (o_hdr_A = this.find_a("recvonly")) || (o_hdr_A = this.find_a("inactive"))){
-		o_hdr_A.s_field = hold_resume_atts[b_lo_held ? 1 : 0][b_ro_held ? 1 : 0];
+		o_hdr_A.s_field = hold_resume_atts[b_lo_held ? 1 : 0][b_lo_held ? 1 : 0];
 	}
 	else{
 		var o_hdr_newA;
-		if((o_hdr_newA = new tsdp_header_A(hold_resume_atts[b_lo_held ? 1 : 0][b_ro_held ? 1 : 0], null))){
+		if((o_hdr_newA = new tsdp_header_A(hold_resume_atts[b_lo_held ? 1 : 0][b_lo_held ? 1 : 0], null))){
 			this.add_headers(o_hdr_newA);
 		}
 	}

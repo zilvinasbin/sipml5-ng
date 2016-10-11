@@ -996,8 +996,6 @@ SIPml.Stack = function (o_conf) {
             }
         }
 
-
-
         var _setStream = function (o_view, o_stream, b_audio) {
             if (o_view) {
                 attachMediaStream(o_view, o_stream);

@@ -167,11 +167,18 @@ tmedia_session_jsep.prototype.decorate_lo = function () {
             o_hdr_S.s_value = "Doubango Telecom - " + tsk_utils_get_navigator_friendly_name();
         }
         /* HACK: https://bugzilla.mozilla.org/show_bug.cgi?id=1072384 */
-        var o_hdr_O;
-        if ((o_hdr_O = this.o_sdp_lo.get_header(tsdp_header_type_e.O))) {
-            if (o_hdr_O.s_addr === "0.0.0.0") {
-                o_hdr_O.s_addr = "127.0.0.1";
-            }
+        //var o_hdr_O;
+        //if ((o_hdr_O = this.o_sdp_lo.get_header(tsdp_header_type_e.O))) {
+        //    if (o_hdr_O.s_addr === "0.0.0.0") {
+        //        o_hdr_O.s_addr = "127.0.0.1";
+        //    }
+        //}
+
+        // BUGFIX: [asterisk] remove first a=sendrecv
+        var o_hdr_A;
+        if ( this.b_lo_held && (o_hdr_A = this.o_sdp_lo.get_header_a('sendrecv'))) {
+            //o_hdr_A.s_field = 'sendonly';
+            this.o_sdp_lo.remove_header_by_type_field(tsdp_header_type_e.A, 'sendrecv');
         }
 
         /* Remove 'video' media if not enabled (bug in chrome: doesn't honor 'has_video' parameter) */
@@ -195,9 +202,9 @@ tmedia_session_jsep.prototype.decorate_lo = function () {
             }
 
             // HACK: https://bugzilla.mozilla.org/show_bug.cgi?id=1072384
-            if (o_hdr_M.o_hdr_C && o_hdr_M.o_hdr_C.s_addr === "0.0.0.0") {
-                o_hdr_M.o_hdr_C.s_addr = "127.0.0.1";
-            }
+            //if (o_hdr_M.o_hdr_C && o_hdr_M.o_hdr_C.s_addr === "0.0.0.0") {
+            //    o_hdr_M.o_hdr_C.s_addr = "127.0.0.1";
+            //}
 
             // bandwidth
             if (this.o_bandwidth) {
@@ -318,6 +325,12 @@ tmedia_session_jsep.prototype.decorate_ro = function (b_remove_bundle) {
 tmedia_session_jsep.prototype.subscribe_stream_events = function () {
     if (this.o_pc) {
         var This = (tmedia_session_jsep01.mozThis || this);
+        //this.o_pc.ontrack = function (evt) {
+        //    tsk_utils_log_info("__on_track");
+        //    if (This.o_mgr) {
+        //        This.o_mgr.set_stream_remote(evt.streams[0]);
+        //    }
+        //}
         this.o_pc.onaddstream = function (evt) {
             tsk_utils_log_info("__on_add_stream");
             This.o_remote_stream = evt.stream;
@@ -343,7 +356,7 @@ tmedia_session_jsep.prototype.close = function () {
     if (this.o_pc) {
         if (this.o_local_stream) {
             // TODO: On Firefox 26: Error: "removeStream not implemented yet"
-            try { this.o_pc.removeStream(this.o_local_stream); } catch (e) { tsk_utils_log_error(e); }
+            //try { this.o_pc.removeStream(this.o_local_stream); } catch (e) { tsk_utils_log_error(e); }
             if (!this.b_cache_stream || (this.e_type == tmedia_type_e.SCREEN_SHARE)) { // only stop if caching is disabled or screenshare
                 try {
                     var tracks = this.o_local_stream.getTracks();
@@ -371,13 +384,25 @@ tmedia_session_jsep.prototype.__hold = function () {
         // tsk_utils_log_warn('already on hold');
         return;
     }
+    var This = this;
+
     this.b_lo_held = true;
 
     this.o_sdp_ro = null;
     this.o_sdp_lo = null;
 
+    this.b_sdp_lo_pending = true;
+    this.b_sdp_ro_pending = true;
+
     if (this.o_pc && this.o_local_stream) {
-        this.o_pc.removeStream(this.o_local_stream);
+        this.o_pc.getSenders().forEach(function(sender){
+            This.o_local_stream.getTracks().forEach(function(track){
+                if(track == sender.track){
+                    This.o_pc.removeTrack(sender);
+                    tsk_utils_log_info('This.o_pc.removeTrack(sender)');
+                }
+            })
+        });
     }
 
     return 0;
@@ -388,13 +413,20 @@ tmedia_session_jsep.prototype.__resume = function () {
         // tsk_utils_log_warn('not on hold');
         return;
     }
+    var This = this;
+
     this.b_lo_held = false;
 
     this.o_sdp_lo = null;
     this.o_sdp_ro = null;
 
+    this.b_sdp_lo_pending = true;
+    this.b_sdp_ro_pending = true;
+
     if (this.o_pc && this.o_local_stream) {
-        this.o_pc.addStream(this.o_local_stream);
+        this.o_local_stream.getTracks().forEach(function(track){
+            return This.o_pc.addTrack(track, This.o_local_stream);
+        });
     }
 
     return 0;
@@ -408,17 +440,22 @@ function tmedia_session_jsep01(o_mgr) {
     tmedia_session_jsep.call(this, o_mgr);
     this.o_media_constraints =
     {
-        'mandatory':
-          {
-              'OfferToReceiveAudio': !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id),
-              'OfferToReceiveVideo': !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id)
-          }
+        'mandatory': {
+            'OfferToReceiveAudio': !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id),
+            'OfferToReceiveVideo': !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id)
+        },
+        optional: [
+            {DtlsSrtpKeyAgreement: true}
+        ],
+        'offerToReceiveAudio': !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id),
+        'offerToReceiveVideo': !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id),
+        'iceRestart': true
     };
 
-    if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
-        //tmedia_session_jsep01.mozThis = this; // FIXME: no longer needed? At least not needed on FF 34.05
-        this.o_media_constraints.mandatory.MozDontOfferDataChannel = true;
-    }
+    //if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
+    //    //tmedia_session_jsep01.mozThis = this; // FIXME: no longer needed? At least not needed on FF 34.05
+    //    this.o_media_constraints.mandatory.MozDontOfferDataChannel = true;
+    //}
 }
 
 tmedia_session_jsep01.mozThis = undefined;
@@ -432,7 +469,7 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
             return;
         }
 
-        if (o_stream) {
+        if (o_stream && !This.b_ro_held) {
             // save stream other next calls
             if (o_stream.getAudioTracks().length > 0 && o_stream.getVideoTracks().length == 0) {
                 __o_jsep_stream_audio = o_stream;
@@ -469,11 +506,17 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
              );
         }
         else {
+            // FIXME: hold offer
+            var o_tmp_media_constraints = Object.assign({}, This.o_media_constraints);
+            if (This.b_lo_held) {
+                o_tmp_media_constraints['offerToReceiveAudio'] = false;
+            }
+            //console.debug(o_tmp_media_constraints);
             tsk_utils_log_info("createOffer");
             This.o_pc.createOffer(
                 tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpSuccess : function (o_offer) { tmedia_session_jsep01.onCreateSdpSuccess(o_offer, This); },
                 tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpError : function (s_error) { tmedia_session_jsep01.onCreateSdpError(s_error, This); },
-                This.o_media_constraints
+                o_tmp_media_constraints
             );
         }
     }
@@ -512,9 +555,9 @@ tmedia_session_jsep01.onSetLocalDescriptionSuccess = function (_This) {
     tsk_utils_log_info("onSetLocalDescriptionSuccess");
     var This = (tmedia_session_jsep01.mozThis || _This);
     if (This && This.o_pc) {
-        if ((This.o_pc.iceGatheringState || This.o_pc.iceState) === "complete") {
-            tmedia_session_jsep01.onIceGatheringCompleted(This);
-        }
+        //if ((This.o_pc.iceGatheringState || This.o_pc.iceState) === "complete") {
+        //    tmedia_session_jsep01.onIceGatheringCompleted(This);
+        //}
         This.b_sdp_ro_offer = false; // reset until next incoming RO
     }
 }
@@ -579,11 +622,19 @@ tmedia_session_jsep01.onIceCandidate = function (o_event, _This) {
         tsk_utils_log_error("This/PeerConnection is null: unexpected");
         return;
     }
-    var iceState = (This.o_pc.iceGatheringState || This.o_pc.iceState);
 
+    if (o_event.candidate) {
+        This.o_pc.addIceCandidate(new RTCIceCandidate(o_event.candidate), function(){
+            tsk_utils_log_info("addIceCandidate success");
+        }, function(error) {
+            tsk_utils_log_info('addIceCandidate failed = ' + error.toString());
+        } );
+    }
+
+    var iceState = (This.o_pc.iceGatheringState || This.o_pc.iceState);
     tsk_utils_log_info("onIceCandidate = " + iceState);
 
-    if (iceState === "complete" || (o_event && !o_event.candidate)) {
+    if ((o_event && !o_event.candidate)) { //iceState === "complete" ||
         tsk_utils_log_info("ICE GATHERING COMPLETED!");
         tmedia_session_jsep01.onIceGatheringCompleted(This);
     }

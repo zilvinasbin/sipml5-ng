@@ -99,6 +99,14 @@ tsdp_message.prototype.remove_header = function (e_type) {
     }
 }
 
+tsdp_message.prototype.remove_header_by_type_field = function (e_type, s_field) {
+    for(var i = 0; i < this.ao_headers.length; ++i){
+        if(this.ao_headers[i].e_type == e_type && this.ao_headers[i].s_field == s_field){
+            this.ao_headers.splice(i, 1);
+        }
+    }
+}
+
 tsdp_message.prototype.get_header_at = function(e_type, i_index){
     var i_pos = 0;
     for (var i = 0; i < this.ao_headers.length; ++i) {
