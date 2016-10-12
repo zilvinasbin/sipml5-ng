@@ -704,7 +704,7 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         }
         try { tsk_utils_log_info("ICE servers:" + JSON.stringify(o_iceServers)); } catch (e) { }
         this.o_pc = new window.RTCPeerConnection(
-                (o_iceServers && !o_iceServers.length) ? null : { iceServers: o_iceServers }, // empty array is used to disable STUN/TURN.
+                (o_iceServers && !o_iceServers.length) ? null : { iceServers: o_iceServers, iceTransportPolicy: 'all', rtcpMuxPolicy: 'negotiate' }, // empty array is used to disable STUN/TURN.
                 this.o_media_constraints
         );
         this.o_pc.onicecandidate = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onIceCandidate : function (o_event) { tmedia_session_jsep01.onIceCandidate(o_event, This); };
