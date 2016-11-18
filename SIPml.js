@@ -12,7 +12,7 @@
 @version     2.0.3
 */
 
-/** 
+/**
 @namespace
 @description Root namesapce.
 */
@@ -101,7 +101,7 @@ SIPml.getRunningApps = function () {
 /**
 Sets the video fps. Requires webrt4all plugin.
 @since version 2.0.0
-@param {Integer} fps fps value. 
+@param {Integer} fps fps value.
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */
@@ -132,7 +132,7 @@ SIPml.setMaxVideoSize = function (maxVideoSize) {
 /**
 Sets the maximum bandwidth (upload). Requires webrt4all plugin.
 @since version 2.0.0
-@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps). 
+@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps).
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */
@@ -147,7 +147,7 @@ SIPml.setMaxBandwidthUp = function (maxBandwidthUp) {
 /**
 Sets the maximum bandwidth (down). Requires webrt4all plugin.
 @since version 2.0.0
-@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps). 
+@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps).
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */
@@ -163,7 +163,7 @@ SIPml.setMaxBandwidthDown = function (maxBandwidthDown) {
 Defines whether to enable "zero-artifacts" features. Requires webrt4all plugin. <br />
 More information about this option on Doubango's TelePresence wiki page: <a href="https://code.google.com/p/telepresence/wiki/Technical_Video_quality#Zero-artifacts">https://code.google.com/p/telepresence/wiki/Technical_Video_quality#Zero-artifacts</a>
 @since version 2.0.0
-@param {Boolean} zeroArtifacts New optional value. 
+@param {Boolean} zeroArtifacts New optional value.
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */
@@ -411,7 +411,7 @@ SIPml.init = function (successCallback, errorCallback) {
             if (SIPml.s_system_friendly_name == 'win' || SIPml.s_system_friendly_name == 'windows') {
                 // Internet explorer
                 if (SIPml.s_navigator_friendly_name == 'ie') {
-                    // Check for IE version 
+                    // Check for IE version
                     var rv = -1;
                     var ua = navigator.userAgent;
                     var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
@@ -590,7 +590,7 @@ SIPml.EventTarget.prototype.dispatchEvent = function (o_event) {
 // ================================== SIPml.Event ==========================================
 
 
-/** 
+/**
 SIP  event object. You should never create an instance of this class by yourself.
 @constructor
 @param {String} type The event type or identifier. Please check <a href="SIPml.EventTarget.html#SIPml.EventTarget.Session">this link</a> for more information about all supported session event types.
@@ -726,7 +726,7 @@ var configuration = {
         enable_early_ims: true, // optional
         events_listener: { events: '*', listener: listenerFunc }, // optional
         sip_headers: [ //optional
-            {name: 'User-Agent', value: 'IM-client/OMA1.0 sipML5-v1.0.89.0'}, 
+            {name: 'User-Agent', value: 'IM-client/OMA1.0 sipML5-v1.0.89.0'},
             {name: 'Organization', value: 'Doubango Telecom'}
         ]
     };
@@ -762,7 +762,7 @@ var o_stack = new SIPml.Stack({
         enable_click2call: false, // optional
         events_listener: { events: '*', listener: listenerFunc }, //optional
         sip_headers: [ //optional
-            {name: 'User-Agent', value: 'IM-client/OMA1.0 sipML5-v1.0.89.0'}, 
+            {name: 'User-Agent', value: 'IM-client/OMA1.0 sipML5-v1.0.89.0'},
             {name: 'Organization', value: 'Doubango Telecom'}
         ]
     }
@@ -810,7 +810,7 @@ SIPml.Stack = function (o_conf) {
         // each port can accept up to 65K connections which means that the cloud can manage 325K active connections
         // the number of port will be increased or decreased based on the current trafic
 
-        // webrtc2sip 2.2+ (Doubango): 
+        // webrtc2sip 2.2+ (Doubango):
         //      WS: 10060, 11060, 12060, 13060, 14060
         //      WSS: 10062, 11062, 12062, 13062, 14062
         //
@@ -998,7 +998,7 @@ SIPml.Stack = function (o_conf) {
 
         var _setStream = function (o_view, o_stream, b_audio) {
             if (o_view) {
-                attachMediaStream(o_view, o_stream);
+                o_view.srcObject = o_stream;
                 return (b_audio && o_stream && o_stream.getAudioTracks().length > 0) || (!b_audio && o_stream && o_stream.getVideoTracks().length > 0);
             }
         }
@@ -1114,7 +1114,7 @@ Updates configuration values.
 o_stack.setConfiguration({
     proxy_url: 'ws://192.168.0.10:5060',
     sip_headers: [
-            {name: 'User-Agent', value: 'IM-client/OMA1.0 sipML5-v1.0.89.0'}, 
+            {name: 'User-Agent', value: 'IM-client/OMA1.0 sipML5-v1.0.89.0'},
             {name: 'Organization', value: 'Doubango Telecom'}
         ]
     }
@@ -1196,7 +1196,7 @@ SIPml.Stack.prototype.setConfiguration = function (o_conf) {
 
 
 /**
-Starts the SIP stack and connect the network transport to the WebSocket server without sending any SIP request. 
+Starts the SIP stack and connect the network transport to the WebSocket server without sending any SIP request.
 This function must be be called before any attempt to make or receive calls/messages. This function is asynchronous which means that the stack will not be immediately started after the call.
 Please check <a href="SIPml.EventTarget.html#SIPml.EventTarget.Stack">this link</a> for more information on all supported events.
 @returns {Integer} 0 if successful; otherwise nonzero
@@ -1209,7 +1209,7 @@ SIPml.Stack.prototype.start = function () {
 /**
 Stops the SIP stack and disconnect the network transport from the WebSocket server. This function will also hangup all calls and unregister the user from the SIP server.
 Please check <a href="SIPml.EventTarget.html#SIPml.EventTarget.Stack">this link</a> for more information on all supported events.
-@param {Integer} [timeout] Optional parameter used to defined maximum time in milliseconds to take to stop the stack. 
+@param {Integer} [timeout] Optional parameter used to defined maximum time in milliseconds to take to stop the stack.
 Default value: 2000 millis
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_INVALID_STATE} <font color="red">ERR_INVALID_STATE</font>
@@ -1234,7 +1234,7 @@ var <a href="SIPml.Session.Registration.html">o_registration</a> = this.<a href=
                     {name: 'language', value: '\"en,fr\"'}
             ],
             sip_headers: [
-                    {name: 'What', value: 'Registration', session: false}, 
+                    {name: 'What', value: 'Registration', session: false},
                     {name: 'Organization', value: 'Doubango Telecom', session: true}
             ]
         });
@@ -1251,7 +1251,7 @@ var <a href="SIPml.Session.Call.html">o_audiovideo</a> = this.<a href="#newSessi
                     {name: 'language', value: '\"en,fr\"'}
             ],
             sip_headers: [
-                    {name: 'What', value: 'Audio/Video call', session: false}, 
+                    {name: 'What', value: 'Audio/Video call', session: false},
                     {name: 'Organization', value: 'Doubango Telecom', session: false}
             ]
         });
@@ -1293,7 +1293,7 @@ SIPml.Stack.prototype.newSession = function (s_type, o_conf) {
 
 // ================================== SIPml.Stack.Event ==========================================
 
-/** 
+/**
 SIP Stack event object. You should never create an instance of this object.
 @constructor
 @extends SIPml.Event
@@ -1316,7 +1316,7 @@ SIPml.Stack.Event.prototype = Object.create(SIPml.Event.prototype);
 Anonymous SIP Session configuration object.
 @namespace SIPml.Session.Configuration
 @name SIPml.Session.Configuration
-@property {Integer} [expires] Session timeout in seconds. 
+@property {Integer} [expires] Session timeout in seconds.
 @property {HTMLVideoElement} [video_local] <a href="https://developer.mozilla.org/en-US/docs/DOM/HTMLVideoElement">HTMLVideoElement<a> where to display the local video preview. This propety should only be used for <a href="SIPml.Session.Call.html">video sessions</a>.
 @property {HTMLVideoElement} [video_remote] <a href="https://developer.mozilla.org/en-US/docs/DOM/HTMLVideoElement">HTMLVideoElement<a> where to display the remote video stream. This propety should only be used for <a href="SIPml.Session.Call.html">video sessions</a>.
 @property {HTMLAudioElement} [audio_remote] <a href="https://developer.mozilla.org/en-US/docs/DOM/HTMLAudioElement">HTMLAudioElement<a> used to playback the remote audio stream. This propety should only be used for <a href="SIPml.Session.Call.html">audio sessions</a>.
@@ -1332,7 +1332,7 @@ Example: <i>{ audio:64, video:512 }</i>
 Example: <i>{ minWidth:640, minHeight:480, maxWidth:1920, maxHeight:1080 }</i>
 @property {Array} [sip_headers] <i>{name,value,session}</i> trios defining the SIP headers associated to this session. <i>session</i> is a boolean defining whether the header have to be added to all outgoing request or not (initial only).
 @example
-var configuration = 
+var configuration =
 {
     expires: 200,
     audio_remote: document.getElementById('audio_remote'), // &lt;audio id="audio_remote" .../&gt;
@@ -1344,13 +1344,13 @@ var configuration =
                     {name: 'language', value: '\"en,fr\"'}
             ],
     sip_headers: [
-                    {name: 'What', value: 'Audio/Video call', session: false}, 
+                    {name: 'What', value: 'Audio/Video call', session: false},
                     {name: 'Organization', value: 'Doubango Telecom', session: false}
             ]
 }
 */
 
-/** 
+/**
 Base (abstract) SIP session. You should never create an instance of this class by yourself. You have to use <a href="SIPml.Stack.html#newSession"> newSession()</a> to create a new instance.
 This is a base class for <a href="SIPml.Session.Registration.html">SIPml.Session.Registration</a>, <a href="SIPml.Session.Call.html">SIPml.Session.Call</a> and <a href="SIPml.Session.Message.html">SIPml.Session.Message</a>.
 @constructor
@@ -1417,7 +1417,7 @@ SIPml.Session.prototype.setConfiguration = function (o_conf) {
 
         var _addStream = function (o_view, o_stream, b_audio) {
             if (o_view) {
-                attachMediaStream(o_view, o_stream);
+                o_view.srcObject = o_stream;
                 return (b_audio && o_stream && o_stream.getAudioTracks().length > 0) || (!b_audio && o_stream && o_stream.getVideoTracks().length > 0);
             }
         }
@@ -1513,7 +1513,7 @@ SIPml.Session.prototype.accept = function (o_conf) {
 // ================================== SIPml.Session.Event ==================================
 
 
-/** 
+/**
 SIP session event object. You should never create an instance of this class by yourself.
 @constructor
 @extends SIPml.Event
@@ -1531,7 +1531,7 @@ SIPml.Session.Event.prototype = Object.create(SIPml.Event.prototype);
 
 
 /**
-Gets the name of destination for the current call transfer. 
+Gets the name of destination for the current call transfer.
 @returns {String} The name of destination for the current call transfer (e.g. 'John Doe').
 */
 SIPml.Session.Event.prototype.getTransferDestinationFriendlyName = function () {
@@ -1600,7 +1600,7 @@ SIPml.Session.Registration.prototype.unregister = function (o_conf) {
 
 // ================================== SIPml.Call ==========================================
 
-/** 
+/**
 SIP audio/video/screenshare call session class. You should never create an instance of this class by yourself.
 Please use <a href="SIPml.Stack.html#newSession">stack.newSession()</a> function to create a new audio/video/screenshare session.
 @constructor
@@ -1823,7 +1823,7 @@ SIPml.Session.Call.prototype.mute = function (s_media, b_mute) {
 
 // ================================== SIPml.Session.Message ==========================================
 
-/** 
+/**
 SIP MESSAGE (SMS) session class. You should never create an instance of this class by yourself.
 Please use <a href="SIPml.Stack.html#newSession">stack.newSession()</a> function to create a messaging/IM session.
 @constructor
@@ -1879,7 +1879,7 @@ SIPml.Session.Message.prototype.send = function (s_to, o_content, s_content_type
 // ================================== SIPml.Session.Publish ==========================================
 
 
-/** 
+/**
 SIP PUBLISH (for presence status publication) session class.You should never create an instance of this class by yourself.
 Please use <a href="SIPml.Stack.html#newSession">stack.newSession()</a> function to create a new presence publication session.
 @constructor
@@ -1977,7 +1977,7 @@ SIPml.Session.Publish.prototype.unpublish = function (o_conf) {
 // ================================== SIPml.Session.Subscribe ==========================================
 
 
-/** 
+/**
 SIP SUBSCRIBE (for presence status subscription) session class.You should never create an instance of this class by yourself.
 Please use <a href="SIPml.Stack.html#newSession">stack.newSession()</a> function to create a new presence subscription session.
 @constructor
