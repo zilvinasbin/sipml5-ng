@@ -444,13 +444,16 @@ function tmedia_session_jsep01(o_mgr) {
             'OfferToReceiveAudio': !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id),
             'OfferToReceiveVideo': !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id)
         },
-        optional: [
-            {DtlsSrtpKeyAgreement: true}
-        ],
-        'offerToReceiveAudio': !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id),
-        'offerToReceiveVideo': !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id),
-        'iceRestart': true
+        // optional: [
+        //     { DtlsSrtpKeyAgreement: true }
+        // ],
     };
+
+    if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
+        this.o_media_constraints['offerToReceiveAudio'] = !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id);
+        this.o_media_constraints['offerToReceiveVideo'] = !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id);
+        this.o_media_constraints['iceRestart'] = true;
+    }
 
     //if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
     //    //tmedia_session_jsep01.mozThis = this; // FIXME: no longer needed? At least not needed on FF 34.05
@@ -495,28 +498,34 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
         }
         This.o_mgr.set_stream_local(o_stream);
 
+        console.debug(This.o_media_constraints);
+        console.debug(tmedia_session_jsep01.mozThis);
+
         var b_answer = ((This.b_sdp_ro_pending || This.b_sdp_ro_offer) && (This.o_sdp_ro != null));
         if (b_answer) {
             tsk_utils_log_info("createAnswer");
             This.o_pc.createAnswer(
+              This.o_media_constraints
+            ).then(
                 tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpSuccess : function (o_offer) { tmedia_session_jsep01.onCreateSdpSuccess(o_offer, This); },
-                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpError : function (s_error) { tmedia_session_jsep01.onCreateSdpError(s_error, This); },
-                This.o_media_constraints,
-                false // createProvisionalAnswer
+                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpError : function (s_error) { tmedia_session_jsep01.onCreateSdpError(s_error, This); }
              );
         }
         else {
             // FIXME: hold offer
             var o_tmp_media_constraints = Object.assign({}, This.o_media_constraints);
             if (This.b_lo_held) {
-                o_tmp_media_constraints['offerToReceiveAudio'] = false;
+                o_tmp_media_constraints['mandatory']['OfferToReceiveAudio'] = false;
+                if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
+                    o_tmp_media_constraints['offerToReceiveAudio'] = false;
+                }
             }
-            //console.debug(o_tmp_media_constraints);
             tsk_utils_log_info("createOffer");
             This.o_pc.createOffer(
-                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpSuccess : function (o_offer) { tmedia_session_jsep01.onCreateSdpSuccess(o_offer, This); },
-                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpError : function (s_error) { tmedia_session_jsep01.onCreateSdpError(s_error, This); },
-                o_tmp_media_constraints
+              o_tmp_media_constraints
+            ).then(
+              tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpSuccess : function (o_offer) { tmedia_session_jsep01.onCreateSdpSuccess(o_offer, This); },
+              tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpError : function (s_error) { tmedia_session_jsep01.onCreateSdpError(s_error, This); }
             );
         }
     }
@@ -690,7 +699,7 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         }
         var o_iceServers = this.ao_ice_servers;
         if (!o_iceServers) { // defines default ICE servers only if none exist (because WebRTC requires ICE)
-            // HACK Nightly 21.0a1 (2013-02-18): 
+            // HACK Nightly 21.0a1 (2013-02-18):
             // - In RTCConfiguration passed to RTCPeerConnection constructor: FQDN not yet implemented (only IP-#s). Omitting "stun:stun.l.google.com:19302"
             // - CHANGE-REQUEST not supported when using "numb.viagenie.ca"
             // - (stun/ERR) Missing XOR-MAPPED-ADDRESS when using "stun.l.google.com"
@@ -704,13 +713,13 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         }
         try { tsk_utils_log_info("ICE servers:" + JSON.stringify(o_iceServers)); } catch (e) { }
         this.o_pc = new window.RTCPeerConnection(
-                (o_iceServers && !o_iceServers.length) ? null : { iceServers: o_iceServers, iceTransportPolicy: 'all', rtcpMuxPolicy: 'negotiate' }, // empty array is used to disable STUN/TURN.
-                this.o_media_constraints
+                (o_iceServers && !o_iceServers.length) ? null : { iceServers: o_iceServers, iceTransportPolicy: 'all', rtcpMuxPolicy: 'negotiate' } // empty array is used to disable STUN/TURN.
+                //, this.o_media_constraints
         );
         this.o_pc.onicecandidate = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onIceCandidate : function (o_event) { tmedia_session_jsep01.onIceCandidate(o_event, This); };
         this.o_pc.onnegotiationneeded = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onNegotiationNeeded : function (o_event) { tmedia_session_jsep01.onNegotiationNeeded(o_event, This); };
         this.o_pc.onsignalingstatechange = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSignalingstateChange : function (o_event) { tmedia_session_jsep01.onSignalingstateChange(o_event, This); };
-                
+
         this.subscribe_stream_events();
     }
 
