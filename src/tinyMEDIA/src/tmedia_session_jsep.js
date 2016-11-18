@@ -498,9 +498,6 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
         }
         This.o_mgr.set_stream_local(o_stream);
 
-        console.debug(This.o_media_constraints);
-        console.debug(tmedia_session_jsep01.mozThis);
-
         var b_answer = ((This.b_sdp_ro_pending || This.b_sdp_ro_offer) && (This.o_sdp_ro != null));
         if (b_answer) {
             tsk_utils_log_info("createAnswer");
