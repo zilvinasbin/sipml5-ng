@@ -529,7 +529,7 @@ tsip_dialog.prototype.response_send = function (o_response) {
         /* As this is a response ...then use the associate server transaction */
         var o_transac = o_layer_transac.find_server(o_response);
         if (o_transac) {
-            setTimeout(function () { o_transac.callback(tsip_transac_event_type_e.OUTGOING_MSG, o_response); }, 1);
+            setImmediate(function () { o_transac.callback(tsip_transac_event_type_e.OUTGOING_MSG, o_response); });
             i_ret = 0;
         }
         else {

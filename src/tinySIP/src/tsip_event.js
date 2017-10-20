@@ -113,48 +113,48 @@ tsip_event.prototype.is_type_stack = function () {
 tsip_event.prototype.signal = function () {
     var This = this;
     if (this.o_session.on_event && this.is_type_session()) {
-        setTimeout(function () { This.o_session.on_event(This) }, 1);
+        setImmediate(function () { This.o_session.on_event(This) });
     }
     
     switch (this.e_type) {
         case tsip_event_type_e.DIALOG:
             {
                 if (This.o_session.o_stack.on_event_dialog) {
-                    setTimeout(function () { This.o_session.o_stack.on_event_dialog(This) }, 1);
+                    setImmediate(function () { This.o_session.o_stack.on_event_dialog(This) });
                 }
                 break;
             }
         case tsip_event_type_e.STACK:
             {
                 if (This.o_session.o_stack.on_event_stack) {
-                    setTimeout(function () { This.o_session.o_stack.on_event_stack(This) }, 1);
+                    setImmediate(function () { This.o_session.o_stack.on_event_stack(This) });
                 }
             }
         case tsip_event_type_e.INVITE:
             {
                 if (This.o_session.o_stack.on_event_invite) {
-                    setTimeout(function () { This.o_session.o_stack.on_event_invite(This) }, 1);
+                    setImmediate(function () { This.o_session.o_stack.on_event_invite(This) });
                 }
                 break;
             }
         case tsip_event_type_e.MESSAGE:
             {
                 if (This.o_session.o_stack.on_event_message) {
-                    setTimeout(function () { This.o_session.o_stack.on_event_message(This) }, 1);
+                    setImmediate(function () { This.o_session.o_stack.on_event_message(This) });
                 }
                 break;
             }
         case tsip_event_type_e.PUBLISH:
             {
                 if (This.o_session.o_stack.on_event_publish) {
-                    setTimeout(function () { This.o_session.o_stack.on_event_publish(This) }, 1);
+                    setImmediate(function () { This.o_session.o_stack.on_event_publish(This) });
                 }
                 break;
             }
         case tsip_event_type_e.SUBSCRIBE:
             {
                 if (This.o_session.o_stack.on_event_subscribe) {
-                    setTimeout(function () { This.o_session.o_stack.on_event_subscribe(This) }, 1);
+                    setImmediate(function () { This.o_session.o_stack.on_event_subscribe(This) });
                 }
                 break;
             }

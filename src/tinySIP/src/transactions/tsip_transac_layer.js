@@ -120,7 +120,7 @@ tsip_transac_layer.prototype.cancel_by_dialog = function (o_dialog) {
         if (o_dialog.compare(o_transac.get_dialog()) == 0) {
             // async call to avoid dealoc
             var _o_transac = o_transac; // https://code.google.com/p/sipml5/issues/detail?id=173
-            setTimeout(function () { _o_transac.fsm_act(tsip_action_type_e.CANCEL, null); }, 1);
+            setImmediate(function () { _o_transac.fsm_act(tsip_action_type_e.CANCEL, null); });
         }
     }
 
