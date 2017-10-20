@@ -18,7 +18,8 @@ CompressFile()
 	if [ ${1: -3} == ".js" ]
 	then
 		# java -jar google-closure-compiler.jar --js $1 --js_output_file $2 --charset utf-8
-		java -cp . -jar yuicompressor-2.4.7.jar $1 -o $2 --charset utf-8
+		# java -cp . -jar yuicompressor-2.4.7.jar $1 -o $2 --charset utf-8
+		uglifyjs $1 -o $2
 	else
 		java -cp . -jar yuicompressor-2.4.7.jar $1 -o $2 --charset utf-8
 	fi
@@ -189,7 +190,7 @@ done
 AppendScripts $API_FILE_PATH.tmp.js
 # compress JS scripts
 CompressFile $API_FILE_PATH.tmp.js $API_FILE_PATH
-rm -rf $API_FILE_PATH.tmp.js
+rm -r $API_FILE_PATH.tmp.js
 
 # generate and deploy documentation
 ./docgen.sh
