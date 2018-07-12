@@ -325,18 +325,12 @@ tmedia_session_jsep.prototype.decorate_ro = function (b_remove_bundle) {
 tmedia_session_jsep.prototype.subscribe_stream_events = function () {
     if (this.o_pc) {
         var This = (tmedia_session_jsep01.mozThis || this);
-        //this.o_pc.ontrack = function (evt) {
-        //    tsk_utils_log_info("__on_track");
-        //    if (This.o_mgr) {
-        //        This.o_mgr.set_stream_remote(evt.streams[0]);
-        //    }
-        //}
-        this.o_pc.onaddstream = function (evt) {
-            tsk_utils_log_info("__on_add_stream");
-            This.o_remote_stream = evt.stream;
-            if (This.o_mgr) {
-                This.o_mgr.set_stream_remote(evt.stream);
-            }
+        this.o_pc.ontrack = function (evt) {
+           tsk_utils_log_info("__on_track");
+            This.o_remote_stream = evt.streams[0];
+           if (This.o_mgr) {
+               This.o_mgr.set_stream_remote(evt.streams[0]);
+           }
         }
         this.o_pc.onremovestream = function (evt) {
             tsk_utils_log_info("__on_remove_stream");
@@ -496,10 +490,14 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
         else {
             // Probably call held
         }
+
         This.o_mgr.set_stream_local(o_stream);
 
         var b_answer = ((This.b_sdp_ro_pending || This.b_sdp_ro_offer) && (This.o_sdp_ro != null));
         if (b_answer) {
+
+            This.__set_ro(This.o_sdp_ro, true);
+
             tsk_utils_log_info("createAnswer");
             This.o_pc.createAnswer(
               This.o_media_constraints
@@ -669,13 +667,16 @@ tmedia_session_jsep01.onSignalingstateChange = function (o_event, _This) {
         return;
     }
     tsk_utils_log_info("onSignalingstateChange:" + This.o_pc.signalingState);
-    if (This.o_local_stream && This.o_pc.signalingState === "have-remote-offer") {
-        tmedia_session_jsep01.onGetUserMediaSuccess(This.o_local_stream, This);
-    }
+
+    // if (This.o_local_stream && This.o_pc.signalingState === "have-remote-offer") {
+    //     tmedia_session_jsep01.onGetUserMediaSuccess(This.o_local_stream, This);
+    // }
 }
 
 
 tmedia_session_jsep01.prototype.__get_lo = function () {
+
+
     var This = this;
     if (!this.o_pc && !this.b_lo_held) {
         var o_video_constraints = {
@@ -723,10 +724,6 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
     if (!this.o_sdp_lo && !this.b_sdp_lo_pending) {
         this.b_sdp_lo_pending = true;
 
-        // set penfing ro if there is one
-        if (this.b_sdp_ro_pending && this.o_sdp_ro) {
-            this.__set_ro(this.o_sdp_ro, true);
-        }
         // get media stream
         if (this.e_type == tmedia_type_e.AUDIO && (this.b_cache_stream && __o_jsep_stream_audio)) {
             tmedia_session_jsep01.onGetUserMediaSuccess(__o_jsep_stream_audio, This);
