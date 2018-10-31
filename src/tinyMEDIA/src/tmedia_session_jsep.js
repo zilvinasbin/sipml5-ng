@@ -432,7 +432,7 @@ tmedia_session_jsep.prototype.__resume = function () {
 
 function tmedia_session_jsep01(o_mgr) {
     tmedia_session_jsep.call(this, o_mgr);
-    this.o_media_constraints =
+    this.o_rtc_offer_options =
     {
         'mandatory': {
             'OfferToReceiveAudio': !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id),
@@ -444,15 +444,11 @@ function tmedia_session_jsep01(o_mgr) {
     };
 
     if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
-        this.o_media_constraints['offerToReceiveAudio'] = !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id);
-        this.o_media_constraints['offerToReceiveVideo'] = !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id);
-        this.o_media_constraints['iceRestart'] = true;
+        this.o_rtc_offer_options['offerToReceiveAudio'] = !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id);
+        this.o_rtc_offer_options['offerToReceiveVideo'] = !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id);
+        this.o_rtc_offer_options['iceRestart'] = true;
     }
 
-    //if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
-    //    //tmedia_session_jsep01.mozThis = this; // FIXME: no longer needed? At least not needed on FF 34.05
-    //    this.o_media_constraints.mandatory.MozDontOfferDataChannel = true;
-    //}
 }
 
 tmedia_session_jsep01.mozThis = undefined;
@@ -500,7 +496,7 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
 
             tsk_utils_log_info("createAnswer");
             This.o_pc.createAnswer(
-              This.o_media_constraints
+              This.o_rtc_offer_options
             ).then(
                 tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpSuccess : function (o_offer) { tmedia_session_jsep01.onCreateSdpSuccess(o_offer, This); },
                 tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpError : function (s_error) { tmedia_session_jsep01.onCreateSdpError(s_error, This); }
@@ -508,16 +504,16 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
         }
         else {
             // FIXME: hold offer
-            var o_tmp_media_constraints = Object.assign({}, This.o_media_constraints);
+            var o_tmp_rtc_offer_options = Object.assign({}, This.o_rtc_offer_options);
             if (This.b_lo_held) {
-                o_tmp_media_constraints['mandatory']['OfferToReceiveAudio'] = false;
+                o_tmp_rtc_offer_options['mandatory']['OfferToReceiveAudio'] = false;
                 if (tsk_utils_get_navigator_friendly_name() == 'firefox') {
-                    o_tmp_media_constraints['offerToReceiveAudio'] = false;
+                    o_tmp_rtc_offer_options['offerToReceiveAudio'] = false;
                 }
             }
             tsk_utils_log_info("createOffer");
             This.o_pc.createOffer(
-              o_tmp_media_constraints
+              o_tmp_rtc_offer_options
             ).then(
               tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpSuccess : function (o_offer) { tmedia_session_jsep01.onCreateSdpSuccess(o_offer, This); },
               tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onCreateSdpError : function (s_error) { tmedia_session_jsep01.onCreateSdpError(s_error, This); }
@@ -679,6 +675,27 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
 
     var This = this;
     if (!this.o_pc && !this.b_lo_held) {
+
+        var o_audio_constraints = {
+            optional: []
+        };
+
+        // temporary hardcode googAutoGainControl off
+        if (tsk_utils_get_navigator_friendly_name() == 'chrome') {
+          o_audio_constraints['optional'].push(
+            //{sourceId: audio_source},
+            { googAutoGainControl: false },
+            { googAutoGainControl2: false },
+            { googEchoCancellation: false },
+            { googEchoCancellation2: false },
+            { googNoiseSuppression: false },
+            { googNoiseSuppression2: false },
+            { googHighpassFilter: false },
+            { googTypingNoiseDetection: false },
+            { googAudioMirroring: false }
+           );
+        }
+
         var o_video_constraints = {
             mandatory: {},
             optional: []
@@ -712,7 +729,6 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         try { tsk_utils_log_info("ICE servers:" + JSON.stringify(o_iceServers)); } catch (e) { }
         this.o_pc = new window.RTCPeerConnection(
                 (o_iceServers && !o_iceServers.length) ? null : { iceServers: o_iceServers, iceTransportPolicy: 'all', rtcpMuxPolicy: 'negotiate' } // empty array is used to disable STUN/TURN.
-                //, this.o_media_constraints
         );
         this.o_pc.onicecandidate = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onIceCandidate : function (o_event) { tmedia_session_jsep01.onIceCandidate(o_event, This); };
         this.o_pc.onnegotiationneeded = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onNegotiationNeeded : function (o_event) { tmedia_session_jsep01.onNegotiationNeeded(o_event, This); };
@@ -736,7 +752,7 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
                 this.o_mgr.callback(tmedia_session_events_e.STREAM_LOCAL_REQUESTED, this.e_type);
                 navigator.getUserMedia(
                         {
-                            audio: (this.e_type == tmedia_type_e.SCREEN_SHARE) ? false : !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id), // IMPORTANT: Chrome '28.0.1500.95 m' doesn't support using audio with screenshare
+                            audio: (this.e_type == tmedia_type_e.SCREEN_SHARE) ? false : !!(this.e_type.i_id & tmedia_type_e.AUDIO.i_id) ? o_audio_constraints : false,
                             video: !!(this.e_type.i_id & tmedia_type_e.VIDEO.i_id) ? o_video_constraints : false, // "SCREEN_SHARE" contains "VIDEO" flag -> (VIDEO & SCREEN_SHARE) = VIDEO
                             data: false
                         },
