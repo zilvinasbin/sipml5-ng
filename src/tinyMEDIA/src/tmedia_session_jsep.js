@@ -41,6 +41,8 @@ tmedia_session_jsep.prototype.b_ro_changed = false;
 tmedia_session_jsep.prototype.b_lo_held = false;
 tmedia_session_jsep.prototype.b_ro_held = false;
 
+tmedia_session_jsep.prototype.a_mid = [];
+
 //
 //  JSEP
 //
@@ -189,7 +191,14 @@ tmedia_session_jsep.prototype.decorate_lo = function () {
         var i_index = 0;
         var o_hdr_M;
         var b_fingerprint = !!this.o_sdp_lo.get_header_a("fingerprint"); // session-level fingerprint
+        var o_hdr_A;
         while ((o_hdr_M = this.o_sdp_lo.get_header_at(tsdp_header_type_e.M, i_index++))) {
+
+            // save Mid
+            if (o_hdr_A = o_hdr_M.find_a("mid")) {
+                this.a_mid[i_index] = o_hdr_A.s_value;
+            }
+
             // hold/resume
             o_hdr_M.set_holdresume_att(this.b_lo_held, this.b_ro_held);
 
@@ -273,10 +282,33 @@ tmedia_session_jsep.prototype.decorate_ro = function (b_remove_bundle) {
         }
         // ==== END: RFC5939 utility functions ==== //
 
+
+        var find_and_insert_after = function (o_header, s_field, o_insert) {
+            if (! o_header.ao_hdr_A) {
+                return -1;
+            }
+            for(var i = 0; i < o_header.ao_hdr_A.length; ++i){
+                if(o_header.ao_hdr_A[i].s_field == s_field){
+                    o_header.ao_hdr_A.splice((i + 1), 0, o_insert);
+                    return i;
+                }
+            }
+        }
+
+
+
         // change profile if not secure
         //!\ firefox nighly: DTLS-SRTP only, chrome: SDES-SRTP
         var b_fingerprint = !!this.o_sdp_ro.get_header_a("fingerprint"); // session-level fingerprint
         while ((o_hdr_M = this.o_sdp_ro.get_header_at(tsdp_header_type_e.M, i_index++))) {
+
+            // https://support.mozilla.org/en-US/questions/1234227
+            // https://www.fxsitecompat.com/en-CA/docs/2018/webrtc-sdp-offer-now-requires-mid-property/
+            if ((! o_hdr_M.find_a("mid")) && (this.a_mid[i_index]) )  {
+              find_and_insert_after(o_hdr_M, "setup", new tsdp_header_A("mid:" + this.a_mid[i_index]))
+            }
+
+
             // check for "crypto:"/"fingerprint:" lines (event if it's not valid to provide "crypto" lines in non-secure SDP many clients do it, so, just check)
             if (o_hdr_M.s_proto.indexOf("SAVP") < 0) {
                 if (o_hdr_M.find_a("crypto")) {
