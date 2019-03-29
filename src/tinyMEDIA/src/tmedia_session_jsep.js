@@ -168,13 +168,6 @@ tmedia_session_jsep.prototype.decorate_lo = function () {
         if ((o_hdr_S = this.o_sdp_lo.get_header(tsdp_header_type_e.S))) {
             o_hdr_S.s_value = "Doubango Telecom - " + tsk_utils_get_navigator_friendly_name();
         }
-        /* HACK: https://bugzilla.mozilla.org/show_bug.cgi?id=1072384 */
-        //var o_hdr_O;
-        //if ((o_hdr_O = this.o_sdp_lo.get_header(tsdp_header_type_e.O))) {
-        //    if (o_hdr_O.s_addr === "0.0.0.0") {
-        //        o_hdr_O.s_addr = "127.0.0.1";
-        //    }
-        //}
 
         // BUGFIX: [asterisk] remove first a=sendrecv
         var o_hdr_A;
@@ -202,18 +195,9 @@ tmedia_session_jsep.prototype.decorate_lo = function () {
             // hold/resume
             o_hdr_M.set_holdresume_att(this.b_lo_held, this.b_ro_held);
 
-            // HACK: Nightly 20.0a1 uses RTP/SAVPF for DTLS-SRTP which is not correct. More info at https://bugzilla.mozilla.org/show_bug.cgi?id=827932.
-            if (o_hdr_M.find_a("crypto")) {
-                o_hdr_M.s_proto = "RTP/SAVPF";
-            }
-            else if (b_fingerprint || o_hdr_M.find_a("fingerprint")) {
+            if (b_fingerprint || o_hdr_M.find_a("fingerprint")) {
                 o_hdr_M.s_proto = "UDP/TLS/RTP/SAVPF";
             }
-
-            // HACK: https://bugzilla.mozilla.org/show_bug.cgi?id=1072384
-            //if (o_hdr_M.o_hdr_C && o_hdr_M.o_hdr_C.s_addr === "0.0.0.0") {
-            //    o_hdr_M.o_hdr_C.s_addr = "127.0.0.1";
-            //}
 
             // bandwidth
             if (this.o_bandwidth) {
@@ -295,8 +279,6 @@ tmedia_session_jsep.prototype.decorate_ro = function (b_remove_bundle) {
             }
         }
 
-
-
         // change profile if not secure
         //!\ firefox nighly: DTLS-SRTP only, chrome: SDES-SRTP
         var b_fingerprint = !!this.o_sdp_ro.get_header_a("fingerprint"); // session-level fingerprint
@@ -307,7 +289,6 @@ tmedia_session_jsep.prototype.decorate_ro = function (b_remove_bundle) {
             if ((! o_hdr_M.find_a("mid")) && (this.a_mid[i_index]) )  {
               find_and_insert_after(o_hdr_M, "setup", new tsdp_header_A("mid:" + this.a_mid[i_index]))
             }
-
 
             // check for "crypto:"/"fingerprint:" lines (event if it's not valid to provide "crypto" lines in non-secure SDP many clients do it, so, just check)
             if (o_hdr_M.s_proto.indexOf("SAVP") < 0) {
@@ -344,11 +325,6 @@ tmedia_session_jsep.prototype.decorate_ro = function (b_remove_bundle) {
                 }
             }
 
-            // HACK: Nightly 20.0a1 uses RTP/SAVPF for DTLS-SRTP which is not correct. More info at https://bugzilla.mozilla.org/show_bug.cgi?id=827932
-            // Same for chrome: https://code.google.com/p/sipml5/issues/detail?id=92
-            if (o_hdr_M.s_proto.indexOf("UDP/TLS/RTP/SAVP") != -1) {
-                o_hdr_M.s_proto = "RTP/SAVPF";
-            }
         }
     }
     return 0;
@@ -523,7 +499,6 @@ tmedia_session_jsep01.onGetUserMediaSuccess = function (o_stream, _This) {
 
         var b_answer = ((This.b_sdp_ro_pending || This.b_sdp_ro_offer) && (This.o_sdp_ro != null));
         if (b_answer) {
-
             This.__set_ro(This.o_sdp_ro, true);
 
             tsk_utils_log_info("createAnswer");
@@ -567,10 +542,13 @@ tmedia_session_jsep01.onCreateSdpSuccess = function (o_sdp, _This) {
     tsk_utils_log_info("onCreateSdpSuccess");
     var This = (tmedia_session_jsep01.mozThis || _This);
     if (This && This.o_pc) {
-        This.o_pc.setLocalDescription(o_sdp,
-            tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetLocalDescriptionSuccess : function () { tmedia_session_jsep01.onSetLocalDescriptionSuccess(This); },
-            tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetLocalDescriptionError : function (s_error) { tmedia_session_jsep01.onSetLocalDescriptionError(s_error, This); }
-        );
+        This.o_pc.setLocalDescription(o_sdp)
+            .then(
+                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetLocalDescriptionSuccess : function () { tmedia_session_jsep01.onSetLocalDescriptionSuccess(This);}
+            )
+            .catch(
+                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetLocalDescriptionError : function (s_error) { tmedia_session_jsep01.onSetLocalDescriptionError(s_error, This);}
+            )
     }
 }
 
@@ -587,9 +565,9 @@ tmedia_session_jsep01.onSetLocalDescriptionSuccess = function (_This) {
     tsk_utils_log_info("onSetLocalDescriptionSuccess");
     var This = (tmedia_session_jsep01.mozThis || _This);
     if (This && This.o_pc) {
-        //if ((This.o_pc.iceGatheringState || This.o_pc.iceState) === "complete") {
-        //    tmedia_session_jsep01.onIceGatheringCompleted(This);
-        //}
+        if ((This.o_pc.iceGatheringState || This.o_pc.iceState) === "complete") {
+           tmedia_session_jsep01.onIceGatheringCompleted(This);
+        }
         This.b_sdp_ro_offer = false; // reset until next incoming RO
     }
 }
@@ -655,18 +633,12 @@ tmedia_session_jsep01.onIceCandidate = function (o_event, _This) {
         return;
     }
 
-    if (o_event.candidate) {
-        This.o_pc.addIceCandidate(new RTCIceCandidate(o_event.candidate), function(){
-            tsk_utils_log_info("addIceCandidate success");
-        }, function(error) {
-            tsk_utils_log_info('addIceCandidate failed = ' + error.toString());
-        } );
-    }
-
     var iceState = (This.o_pc.iceGatheringState || This.o_pc.iceState);
     tsk_utils_log_info("onIceCandidate = " + iceState);
+    //tsk_utils_log_info("onIceCandidate = " + event.target);
 
-    if ((o_event && !o_event.candidate)) { //iceState === "complete" ||
+    // https://muaz-khan.blogspot.com/2015/01/disable-ice-trickling.html
+    if ((o_event && !o_event.candidate)) {
         tsk_utils_log_info("ICE GATHERING COMPLETED!");
         tmedia_session_jsep01.onIceGatheringCompleted(This);
     }
@@ -703,8 +675,6 @@ tmedia_session_jsep01.onSignalingstateChange = function (o_event, _This) {
 
 
 tmedia_session_jsep01.prototype.__get_lo = function () {
-
-
     var This = this;
     if (!this.o_pc && !this.b_lo_held) {
 
@@ -759,9 +729,10 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
                 : [{ url: 'stun:stun.l.google.com:19302' }, { url: 'stun:stun.counterpath.net:3478' }, { url: 'stun:numb.viagenie.ca:3478' }];
         }
         try { tsk_utils_log_info("ICE servers:" + JSON.stringify(o_iceServers)); } catch (e) { }
-        this.o_pc = new window.RTCPeerConnection(
-                (o_iceServers && !o_iceServers.length) ? null : { iceServers: o_iceServers, iceTransportPolicy: 'all', rtcpMuxPolicy: 'negotiate' } // empty array is used to disable STUN/TURN.
-        );
+        this.o_pc = new window.RTCPeerConnection({
+                iceServers: (o_iceServers && !o_iceServers.length) ? null : o_iceServers,
+                sdpSemantics: "plan-b",
+        });
         this.o_pc.onicecandidate = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onIceCandidate : function (o_event) { tmedia_session_jsep01.onIceCandidate(o_event, This); };
         this.o_pc.onnegotiationneeded = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onNegotiationNeeded : function (o_event) { tmedia_session_jsep01.onNegotiationNeeded(o_event, This); };
         this.o_pc.onsignalingstatechange = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSignalingstateChange : function (o_event) { tmedia_session_jsep01.onSignalingstateChange(o_event, This); };
@@ -818,10 +789,12 @@ tmedia_session_jsep01.prototype.__set_ro = function (o_sdp, b_is_offer) {
             this.decorate_ro(false);
             tsk_utils_log_info("setRemoteDescription(" + (b_is_offer ? "offer)" : "answer)") + "\n" + this.o_sdp_ro);
             this.o_pc.setRemoteDescription(
-               new window.RTCSessionDescription({ type: b_is_offer ? "offer" : "answer", sdp: This.o_sdp_ro.toString() }),
-               tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetRemoteDescriptionSuccess : function () { tmedia_session_jsep01.onSetRemoteDescriptionSuccess(This); },
-               tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetRemoteDescriptionError : function (s_error) { tmedia_session_jsep01.onSetRemoteDescriptionError(s_error, This); }
-            );
+               new window.RTCSessionDescription({ type: b_is_offer ? "offer" : "answer", sdp: This.o_sdp_ro.toString() })
+            ).then (
+                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetRemoteDescriptionSuccess : function () { tmedia_session_jsep01.onSetRemoteDescriptionSuccess(This); }
+            ).catch(
+                tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSetRemoteDescriptionError : function (s_error) { tmedia_session_jsep01.onSetRemoteDescriptionError(s_error, This); }
+            )
         }
         catch (e) {
             tsk_utils_log_error(e);
