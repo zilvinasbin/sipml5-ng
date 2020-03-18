@@ -635,7 +635,6 @@ tmedia_session_jsep01.onIceCandidate = function (o_event, _This) {
 
     var iceState = (This.o_pc.iceGatheringState || This.o_pc.iceState);
     tsk_utils_log_info("onIceCandidate = " + iceState);
-    //tsk_utils_log_info("onIceCandidate = " + event.target);
 
     // https://muaz-khan.blogspot.com/2015/01/disable-ice-trickling.html
     if ((o_event && !o_event.candidate)) {
@@ -685,7 +684,6 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         // temporary hardcode googAutoGainControl off
         if (tsk_utils_get_navigator_friendly_name() == 'chrome') {
           o_audio_constraints['optional'].push(
-            //{sourceId: audio_source},
             { googAutoGainControl: false },
             { googAutoGainControl2: false },
             { googEchoCancellation: false },
@@ -729,10 +727,16 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
                 : [{ url: 'stun:stun.l.google.com:19302' }, { url: 'stun:stun.counterpath.net:3478' }, { url: 'stun:numb.viagenie.ca:3478' }];
         }
         try { tsk_utils_log_info("ICE servers:" + JSON.stringify(o_iceServers)); } catch (e) { }
+
+        var constraints = { };
+        if (tsk_utils_get_navigator_friendly_name() == 'chrome') {
+            constraints['optional'] = [{'googIPv6': false}];
+        }
         this.o_pc = new window.RTCPeerConnection({
                 iceServers: (o_iceServers && !o_iceServers.length) ? null : o_iceServers,
                 sdpSemantics: "plan-b",
-        });
+        }, constraints);
+
         this.o_pc.onicecandidate = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onIceCandidate : function (o_event) { tmedia_session_jsep01.onIceCandidate(o_event, This); };
         this.o_pc.onnegotiationneeded = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onNegotiationNeeded : function (o_event) { tmedia_session_jsep01.onNegotiationNeeded(o_event, This); };
         this.o_pc.onsignalingstatechange = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSignalingstateChange : function (o_event) { tmedia_session_jsep01.onSignalingstateChange(o_event, This); };
