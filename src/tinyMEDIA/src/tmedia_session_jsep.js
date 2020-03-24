@@ -33,6 +33,7 @@ tmedia_session_jsep.prototype.b_sdp_ro_offer = false;
 tmedia_session_jsep.prototype.s_answererSessionId = null;
 tmedia_session_jsep.prototype.s_offererSessionId = null;
 tmedia_session_jsep.prototype.ao_ice_servers = null;
+tmedia_session_jsep.prototype.ao_webrtc_rtcconfiguration = null;
 tmedia_session_jsep.prototype.o_bandwidth = { audio: undefined, video: undefined };
 tmedia_session_jsep.prototype.o_video_size = { minWidth: undefined, minHeight: undefined, maxWidth: undefined, maxHeight: undefined };
 tmedia_session_jsep.prototype.d_screencast_windowid = 0; // BFCP. #0 means entire desktop
@@ -42,6 +43,8 @@ tmedia_session_jsep.prototype.b_lo_held = false;
 tmedia_session_jsep.prototype.b_ro_held = false;
 
 tmedia_session_jsep.prototype.a_mid = [];
+
+tmedia_session_jsep.prototype.o_timerIce = null;
 
 //
 //  JSEP
@@ -63,6 +66,11 @@ tmedia_session_jsep.prototype.__set = function (o_param) {
         case 'ice-servers':
             {
                 this.ao_ice_servers = o_param.o_value;
+                return 0;
+            }
+        case 'webrtc-rtcconfiguration':
+            {
+                this.ao_webrtc_rtcconfiguration = o_param.o_value;
                 return 0;
             }
         case 'cache-stream':
@@ -604,6 +612,13 @@ tmedia_session_jsep01.onIceGatheringCompleted = function (_This) {
     tsk_utils_log_info("onIceGatheringCompleted");
     var This = (tmedia_session_jsep01.mozThis || _This);
     if (This && This.o_pc) {
+
+        if (This.o_timerIce) {
+            tsk_utils_log_info('Clear This.o_timerIce', This.o_timerIce)
+            clearTimeout(This.o_timerIce);
+            This.o_timerIce = null;
+        }
+
         if (!This.b_sdp_lo_pending) {
             tsk_utils_log_warn("onIceGatheringCompleted but no local sdp request is pending");
             return;
@@ -636,16 +651,39 @@ tmedia_session_jsep01.onIceCandidate = function (o_event, _This) {
     var iceState = (This.o_pc.iceGatheringState || This.o_pc.iceState);
     tsk_utils_log_info("onIceCandidate = " + iceState);
 
+    if ( !This.o_timerIce && This.b_sdp_lo_pending) {
+        This.o_timerIce  = setTimeout( function () {
+            tsk_utils_log_info("ICE GATHERING COMPLETE BY TIMEOUT");
+            tmedia_session_jsep01.onIceGatheringCompleted(This)
+        }, 2000);
+    }
+    // this disables trickle ice
     // https://muaz-khan.blogspot.com/2015/01/disable-ice-trickling.html
     if ((o_event && !o_event.candidate)) {
-        tsk_utils_log_info("ICE GATHERING COMPLETED!");
+        tsk_utils_log_info("ICE GATHERING COMPLETED");
         tmedia_session_jsep01.onIceGatheringCompleted(This);
     }
     else if (This.o_pc.iceState === "failed") {
         tsk_utils_log_error("Ice state is 'failed'");
+        if (This.o_timerIce) { clearTimeout(This.o_timerIce); This.o_timerIce = null; }
         This.o_mgr.callback(tmedia_session_events_e.GET_LO_FAILED, This.e_type);
     }
 }
+
+tmedia_session_jsep01.onIceConnectionStateChange = function (o_event, _This) {
+    var This = (tmedia_session_jsep01.mozThis || _This);
+    if (!This || !This.o_pc) {
+        tsk_utils_log_error("This/PeerConnection is null: unexpected");
+        return;
+    }
+
+    var iceConnectionState = This.o_pc.iceConnectionState;
+
+    tsk_utils_log_info("iceConnectionState = " + iceConnectionState);
+}
+
+
+
 
 tmedia_session_jsep01.onNegotiationNeeded = function (o_event, _This) {
     tsk_utils_log_info("onNegotiationNeeded");
@@ -690,8 +728,8 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
             { googEchoCancellation2: false },
             { googNoiseSuppression: false },
             { googNoiseSuppression2: false },
+            //{ googTypingNoiseDetection: false },
             { googHighpassFilter: false },
-            { googTypingNoiseDetection: false },
             { googAudioMirroring: false }
            );
         }
@@ -728,16 +766,28 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         }
         try { tsk_utils_log_info("ICE servers:" + JSON.stringify(o_iceServers)); } catch (e) { }
 
-        var constraints = { };
-        if (tsk_utils_get_navigator_friendly_name() == 'chrome') {
-            constraints['optional'] = [{'googIPv6': false}];
+        var b_isChrome = (tsk_utils_get_navigator_friendly_name() == 'chrome')
+
+        var o_constraints = {};
+
+        if (b_isChrome) {
+            o_constraints['optional'] = [{'googIPv6': false}];
         }
-        this.o_pc = new window.RTCPeerConnection({
+
+        var o_RTCConfiguration = Object.assign({},
+            {
                 iceServers: (o_iceServers && !o_iceServers.length) ? null : o_iceServers,
                 sdpSemantics: "plan-b",
-        }, constraints);
+                //iceCandidatePoolSize: b_isChrome ? 2 : 0 // experiment
+            },
+
+            this.ao_webrtc_rtcconfiguration
+        );
+
+        this.o_pc = new window.RTCPeerConnection(o_RTCConfiguration, o_constraints);
 
         this.o_pc.onicecandidate = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onIceCandidate : function (o_event) { tmedia_session_jsep01.onIceCandidate(o_event, This); };
+        this.o_pc.iceconnectionstatechange = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onIceConnectionStateChange : function (o_event) { tmedia_session_jsep01.onIceConnectionStateChange(o_event, This); };
         this.o_pc.onnegotiationneeded = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onNegotiationNeeded : function (o_event) { tmedia_session_jsep01.onNegotiationNeeded(o_event, This); };
         this.o_pc.onsignalingstatechange = tmedia_session_jsep01.mozThis ? tmedia_session_jsep01.onSignalingstateChange : function (o_event) { tmedia_session_jsep01.onSignalingstateChange(o_event, This); };
 
