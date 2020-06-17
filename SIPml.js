@@ -104,7 +104,7 @@ SIPml.getRunningApps = function () {
 /**
  Set the audio echo cancel functionality to enabled or disabled
  @param {boolean} flag
- @returns true
+ @returns {boolean} true
  */
 SIPml.setAudioConstraintEchoCancel = function (flag) {
     SIPml.b_audio_constraint_echo_cancel = flag;
@@ -114,7 +114,7 @@ SIPml.setAudioConstraintEchoCancel = function (flag) {
 /**
  Set the audio noise suppression functionality to enabled or disabled
  @param {boolean} flag
- @returns true
+ @returns {boolean} true
  */
 SIPml.setAudioConstraintNoiseSuppression = function (flag) {
     SIPml.b_audio_constraint_noise_suppression = flag;
@@ -124,7 +124,7 @@ SIPml.setAudioConstraintNoiseSuppression = function (flag) {
 /**
  Set the audio auto gain control functionality to enabled or disabled
  @param {boolean} flag
- @returns true
+ @returns {boolean} true
  */
 SIPml.setAudioConstraintAutogainControl = function (flag) {
     SIPml.b_audio_constraint_auto_gain = flag;
