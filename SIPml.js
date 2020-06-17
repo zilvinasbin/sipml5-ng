@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2012-2016 Doubango Telecom <http://www.doubango.org>
+* Copyright (C) 2012-2018 Doubango Telecom <http://www.doubango.org>
 * License: BSD
 * This file is part of Open Source sipML5 solution <http://www.sipml5.org>
 */
@@ -9,10 +9,10 @@
 
 @name sipML5 API
 @author      Doubango Telecom <http://www.doubango.org>
-@version     2.0.3
+@version     2.1.4
 */
 
-/**
+/** 
 @namespace
 @description Root namesapce.
 */
@@ -29,6 +29,9 @@ SIPml = {};
 /** @private */SIPml.s_webrtc4all_version = 'unknown';
 /** @private */SIPml.b_have_media_stream = false;
 /** @private */SIPml.b_webrtc_supported = false;
+/** @private */SIPml.b_audio_constraint_echo_cancel = false;
+/** @private */SIPml.b_audio_constraint_noise_suppression = false;
+/** @private */SIPml.b_audio_constraint_auto_gain = false;
 
 
 /**
@@ -99,9 +102,40 @@ SIPml.getRunningApps = function () {
 }
 
 /**
+ Set the audio echo cancel functionality to enabled or disabled
+ @param {boolean} flag
+ @returns true
+ */
+SIPml.setAudioConstraintEchoCancel = function (flag) {
+    SIPml.b_audio_constraint_echo_cancel = flag;
+    return true;
+};
+
+/**
+ Set the audio noise suppression functionality to enabled or disabled
+ @param {boolean} flag
+ @returns true
+ */
+SIPml.setAudioConstraintNoiseSuppression = function (flag) {
+    SIPml.b_audio_constraint_noise_suppression = flag;
+    return true;
+};
+
+/**
+ Set the audio auto gain control functionality to enabled or disabled
+ @param {boolean} flag
+ @returns true
+ */
+SIPml.setAudioConstraintAutogainControl = function (flag) {
+    SIPml.b_audio_constraint_auto_gain = flag;
+    return true;
+};
+
+
+/**
 Sets the video fps. Requires webrt4all plugin.
 @since version 2.0.0
-@param {Integer} fps fps value.
+@param {Integer} fps fps value. 
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */
@@ -132,7 +166,7 @@ SIPml.setMaxVideoSize = function (maxVideoSize) {
 /**
 Sets the maximum bandwidth (upload). Requires webrt4all plugin.
 @since version 2.0.0
-@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps).
+@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps). 
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */
@@ -147,7 +181,7 @@ SIPml.setMaxBandwidthUp = function (maxBandwidthUp) {
 /**
 Sets the maximum bandwidth (down). Requires webrt4all plugin.
 @since version 2.0.0
-@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps).
+@param {Integer} maxBandwidthUp maxBandwidthUp value (kbps). 
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */
@@ -163,7 +197,7 @@ SIPml.setMaxBandwidthDown = function (maxBandwidthDown) {
 Defines whether to enable "zero-artifacts" features. Requires webrt4all plugin. <br />
 More information about this option on Doubango's TelePresence wiki page: <a href="https://code.google.com/p/telepresence/wiki/Technical_Video_quality#Zero-artifacts">https://code.google.com/p/telepresence/wiki/Technical_Video_quality#Zero-artifacts</a>
 @since version 2.0.0
-@param {Boolean} zeroArtifacts New optional value.
+@param {Boolean} zeroArtifacts New optional value. 
 @returns {Integer} 0 if successful; otherwise nonzero
 @throws {ERR_NOT_READY | ERR_NOT_SUPPORTED} <font color="red">ERR_NOT_READY</font> | <font color="red">ERR_NOT_SUPPORTED</font>
 */

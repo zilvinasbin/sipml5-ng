@@ -381,7 +381,7 @@ tsip_stack.prototype.start = function () {
 */
 tsip_stack.prototype.stop = function (i_timeout) {
     var This = this;
-    setImmediate(function () {
+    setTimeout(function () {
         switch (This.e_state) {
             case tsip_transport_state_e.STOPPED:
             case tsip_transport_state_e.STOPPING:
@@ -417,18 +417,18 @@ tsip_stack.prototype.stop = function (i_timeout) {
             if (b_has_non_register_dialogs) {
                 do {
                     if ((This.o_layer_dialog.ao_dialogs.length <= i_register_dialogs_count)) {
-                        setImmediate(func_shutdown_register); // success: move to next
+                        setTimeout(func_shutdown_register, 0); // success: move to next
                         return;
                     }
                     if ((new Date() - o_date_start) >= i_timeout_non_register) {
-                        setImmediate(func_shutdown_register); // timeout: move to next
+                        setTimeout(func_shutdown_register, 0); // timeout: move to next
                         return;
                     }
                 }
                 while (false);
             }
 
-            setImmediate(func_shutdown_non_register); // again
+            setTimeout(func_shutdown_non_register, 0); // again
         }
 
         var func_shutdown_register = function () {
@@ -449,13 +449,13 @@ tsip_stack.prototype.stop = function (i_timeout) {
 
             do {
                 if (This.o_layer_dialog.ao_dialogs.length == 0 || (new Date() - o_date_start) >= i_timeout) {
-                    setImmediate(func_shutdown_transport); // timeout/no-dialog-left: move to next
+                    setTimeout(func_shutdown_transport, 0); // timeout/no-dialog-left: move to next
                     return;
                 }
             }
             while (false);
 
-            setImmediate(func_shutdown_register); // again
+            setTimeout(func_shutdown_register, 0); // again
         }
 
         var func_shutdown_transport = function () {
@@ -478,7 +478,7 @@ tsip_stack.prototype.stop = function (i_timeout) {
             func_shutdown_transport();
         }
 
-    });
+    }, 0);
 
     return 0;
 }
@@ -852,7 +852,7 @@ tsip_stack.prototype.signal = function (i_code, s_phrase) {
         var on_event = this.on_event_stack;
         var o_event = new tsip_event(null, i_code, s_phrase, null, tsip_event_type_e.STACK);
         o_event.o_stack = this;
-        setImmediate(function () { on_event(o_event) });
+        setTimeout(function () { on_event(o_event) }, 0);
     }
     return 0;
 }

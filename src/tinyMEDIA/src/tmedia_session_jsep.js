@@ -174,7 +174,7 @@ tmedia_session_jsep.prototype.decorate_lo = function () {
         /* Session name for debugging - Requires by webrtc2sip to set RTCWeb type */
         var o_hdr_S;
         if ((o_hdr_S = this.o_sdp_lo.get_header(tsdp_header_type_e.S))) {
-            o_hdr_S.s_value = "Doubango Telecom - " + tsk_utils_get_navigator_friendly_name();
+            o_hdr_S.s_value = "Cloudonix WebRTC Client - " + tsk_utils_get_navigator_friendly_name();
         }
 
         // BUGFIX: [asterisk] remove first a=sendrecv
@@ -205,6 +205,11 @@ tmedia_session_jsep.prototype.decorate_lo = function () {
 
             if (b_fingerprint || o_hdr_M.find_a("fingerprint")) {
                 o_hdr_M.s_proto = "UDP/TLS/RTP/SAVPF";
+            }
+
+            // HACK: https://bugzilla.mozilla.org/show_bug.cgi?id=1072384
+            if (o_hdr_M.o_hdr_C && o_hdr_M.o_hdr_C.s_addr === "0.0.0.0") {
+                o_hdr_M.o_hdr_C.s_addr = "127.0.0.1";
             }
 
             // bandwidth
@@ -333,6 +338,11 @@ tmedia_session_jsep.prototype.decorate_ro = function (b_remove_bundle) {
                 }
             }
 
+            // HACK: Nightly 20.0a1 uses RTP/SAVPF for DTLS-SRTP which is not correct. More info at https://bugzilla.mozilla.org/show_bug.cgi?id=827932
+            // Same for chrome: https://code.google.com/p/sipml5/issues/detail?id=92
+            if (o_hdr_M.s_proto.indexOf("UDP/TLS/RTP/SAVP") != -1) {
+                o_hdr_M.s_proto = "RTP/SAVPF";
+            }
         }
     }
     return 0;
@@ -720,19 +730,16 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         };
 
         // temporary hardcode googAutoGainControl off
+        tsk_utils_log_info("About to set o_audio_constraints for " + tsk_utils_get_navigator_friendly_name() + " browser");
         if (tsk_utils_get_navigator_friendly_name() == 'chrome') {
           o_audio_constraints['optional'].push(
-            { googAutoGainControl: false },
-            { googAutoGainControl2: false },
-            { googEchoCancellation: false },
-            { googEchoCancellation2: false },
-            { googNoiseSuppression: false },
-            { googNoiseSuppression2: false },
-            //{ googTypingNoiseDetection: false },
-            { googHighpassFilter: false },
-            { googAudioMirroring: false }
+              { autoGainControl: SIPml.b_audio_constraint_auto_gain },
+              { echoCancellation: SIPml.b_audio_constraint_echo_cancel },
+              { noiseSuppression: SIPml.b_audio_constraint_noise_suppression }
            );
         }
+        tsk_utils_log_info("o_audio_constraints is now:");
+        tsk_utils_log_info(o_audio_constraints);
 
         var o_video_constraints = {
             mandatory: {},
@@ -797,6 +804,10 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
     if (!this.o_sdp_lo && !this.b_sdp_lo_pending) {
         this.b_sdp_lo_pending = true;
 
+        // set penfing ro if there is one
+        if (this.b_sdp_ro_pending && this.o_sdp_ro) {
+            this.__set_ro(this.o_sdp_ro, true);
+        }
         // get media stream
         if (this.e_type == tmedia_type_e.AUDIO && (this.b_cache_stream && __o_jsep_stream_audio)) {
             tmedia_session_jsep01.onGetUserMediaSuccess(__o_jsep_stream_audio, This);

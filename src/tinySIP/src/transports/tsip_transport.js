@@ -234,7 +234,7 @@ tsip_transport.prototype.signal = function (e_type, s_description, o_data) {
     if (this.fn_callback) {
         var fn_callback = this.fn_callback;
         var o_event = new tsip_transport_event(this, e_type, s_description, o_data);
-        setImmediate(function () { fn_callback(o_event) });
+        setTimeout(function () { fn_callback(o_event) }, 0);
     }
     return 0;
 }
