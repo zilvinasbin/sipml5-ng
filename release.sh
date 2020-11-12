@@ -50,7 +50,7 @@ AppendScripts()
     AppendFile src/tinySAK/src/tsk_utils.js $1
     
 	# at this step 'tsk_utils_log_info' is defined
-	echo "tsk_utils_log_info('SIPML5 API version = $API_VERSION');" >> $1
+	echo "tsk_utils_log_info('SIPML5-NG API version = $API_VERSION');" >> $1
     
     AppendFile src/tinyMEDIA/src/tmedia_common.js $1
 	AppendFile src/tinyMEDIA/src/tmedia_webrtc4all.js $1 #include_in<tmedia_common.js>
@@ -192,10 +192,10 @@ done
 AppendScripts $API_FILE_PATH.tmp.js
 # compress JS scripts
 CompressFile $API_FILE_PATH.tmp.js $API_FILE_PATH
-# rm -r $API_FILE_PATH.tmp.js
+rm -r $API_FILE_PATH.tmp.js
 
 # generate and deploy documentation
-# ./docgen.sh
-# DeployFolder docgen
+./docgen.sh
+DeployFolder docgen
 
 
