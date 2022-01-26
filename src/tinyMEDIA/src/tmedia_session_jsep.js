@@ -784,12 +784,17 @@ tmedia_session_jsep01.prototype.__get_lo = function () {
         var o_RTCConfiguration = Object.assign({},
             {
                 iceServers: (o_iceServers && !o_iceServers.length) ? null : o_iceServers,
-                sdpSemantics: "unified-plan",
                 //iceCandidatePoolSize: b_isChrome ? 2 : 0 // experiment
             },
 
             this.ao_webrtc_rtcconfiguration
         );
+
+        /* Experiment: Enable unified-plan SDP Semantics */
+        var s_sdpSemantics = (SIPml.b_sdp_unified_semantics) ? "unified-plan" : "plan-b";
+        o_RTCConfiguration.sdpSemantics = s_sdpSemantics;
+        tsk_utils_log_info("s_sdpSemantics is now:");
+        tsk_utils_log_info(s_sdpSemantics);
 
         if(!o_RTCConfiguration.iceServers) {
             //we must always provide a "sequence type" for our ice servers when calling RTCPeerConnection
