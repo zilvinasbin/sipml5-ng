@@ -32,7 +32,7 @@ SIPml = {};
 /** @private */SIPml.b_audio_constraint_echo_cancel = false;
 /** @private */SIPml.b_audio_constraint_noise_suppression = false;
 /** @private */SIPml.b_audio_constraint_auto_gain = false;
-
+/** @private */SIPml.b_sdp_unified_semantics = true;
 
 /**
 Sets the debug level.
@@ -112,6 +112,14 @@ SIPml.setAudioConstraintEchoCancel = function (flag) {
 };
 
 /**
+ Get the audio echo cancel functionality to enabled or disabled
+ @returns {boolean}
+ */
+SIPml.getAudioConstraintEchoCancel = function () {
+    return SIPml.b_audio_constraint_echo_cancel;
+};
+
+/**
  Set the audio noise suppression functionality to enabled or disabled
  @param {boolean} flag
  @returns {boolean} true
@@ -119,6 +127,14 @@ SIPml.setAudioConstraintEchoCancel = function (flag) {
 SIPml.setAudioConstraintNoiseSuppression = function (flag) {
     SIPml.b_audio_constraint_noise_suppression = flag;
     return true;
+};
+
+/**
+ Get the audio noise suppression functionality to enabled or disabled
+ @returns {boolean}
+ */
+SIPml.getAudioConstraintNoiseSuppression = function () {
+    return SIPml.b_audio_constraint_noise_suppression;
 };
 
 /**
@@ -131,6 +147,31 @@ SIPml.setAudioConstraintAutogainControl = function (flag) {
     return true;
 };
 
+/**
+ Get the audio auto gain control functionality to enabled or disabled
+ @returns {boolean} true
+ */
+SIPml.getAudioConstraintAutogainControl = function () {
+    return SIPml.b_audio_constraint_auto_gain;
+};
+
+/**
+ Set SDP Semantics to unified-plan, instead of default plan-b
+ @param {boolean} flag
+ @returns {boolean}
+ */
+SIPml.setSdpSemanticsPlanUnified = function (flag) {
+    SIPml.b_sdp_unified_semantics = flag;
+    return true;
+}
+
+/**
+ Get SDP Semantics, true for unified-plan, false for plan-b
+ @returns {boolean} true
+ */
+SIPml.getSdpSemanticsPlanUnified = function () {
+    return SIPml.b_sdp_unified_semantics;
+};
 
 /**
 Sets the video fps. Requires webrt4all plugin.
